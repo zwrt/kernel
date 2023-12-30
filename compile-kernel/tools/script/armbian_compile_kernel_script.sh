@@ -1,5 +1,5 @@
 #!/bin/bash
-#==============================================================================================
+#==================================================================================
 #
 # This file is licensed under the terms of the GNU General Public
 # License version 2. This program is licensed "as is" without any
@@ -8,21 +8,20 @@
 # This file is a part of the Rebuild Armbian
 # https://github.com/ophub/amlogic-s9xxx-armbian
 #
-# Description: Run on the x86_64 and aarch64 platforms (ubuntu/debian), Compile the kernel.
+# Description: Run on Armbian, Compile the kernel.
 # Copyright (C) 2021~ https://www.kernel.org
 # Copyright (C) 2021~ https://github.com/unifreq
 # Copyright (C) 2021~ https://github.com/ophub/amlogic-s9xxx-armbian
 #
-# Command: sudo ./recompile
+# Command: armbian-kernel
 # Command optional parameters please refer to the source code repository
 #
-#======================================= Functions list =======================================
+#================================= Functions list =================================
 #
 # error_msg          : Output error message
-# mount_try          : Mount the image file, fail again
 #
 # init_var           : Initialize all variables
-# toolchain_check    : Check and install the cross-compilation toolchain
+# toolchain_check    : Check and install the toolchain
 # query_version      : Query the latest kernel version
 # apply_patch        : Apply custom kernel patches
 # get_kernel_source  : Get the kernel source code
@@ -31,7 +30,7 @@
 # compile_env        : Set up the compile kernel environment
 # compile_dtbs       : Compile the dtbs
 # compile_kernel     : Compile the kernel
-# generate_uinitrd   : Chroot into Armbian to generate initrd.img and uInitrd
+# generate_uinitrd   : Generate initrd.img and uInitrd
 # packit_dtbs        : Packit dtbs files
 # packit_kernel      : Packit boot, modules and header files
 # compile_selection  : Choose to compile dtbs or all kernels
@@ -39,7 +38,7 @@
 #
 # loop_recompile     : Loop to compile kernel
 #
-#=============================== Set make environment variables ===============================
+#========================= Set make environment variables =========================
 #
 # Related file storage path
 current_path="${PWD}"
@@ -48,15 +47,16 @@ kernel_path="${compile_path}/kernel"
 config_path="${compile_path}/tools/config"
 script_path="${compile_path}/tools/script"
 kernel_patch_path="${compile_path}/tools/patch"
-armbian_path="${compile_path}/tools/armbian"
-armbian_file="${armbian_path}/armbian.img"
 out_kernel="${compile_path}/output"
-chroot_path="${out_kernel}/chroot"
-chroot_file="${chroot_path}/chroot_armbian.img"
+tmp_backup_path="/ddbr/tmp"
+boot_backup_path="${tmp_backup_path}/boot"
+modules_backup_path="${tmp_backup_path}/modules"
 
 # Set the system file path to be used
 arch_info="$(uname -m)"
-host_release="$(cat /etc/os-release | grep '^VERSION_CODENAME=.*' | cut -d'=' -f2)"
+host_release="$(cat /etc/os-release | grep '^VERSION_CODENAME=.*' | cut -d"=" -f2)"
+initramfs_conf="/etc/initramfs-tools/update-initramfs.conf"
+ophub_release_file="/etc/ophub-release"
 
 # Set the default for downloading kernel sources from github.com
 repo_owner="unifreq"
@@ -67,24 +67,18 @@ auto_kernel="true"
 # Set whether to apply custom kernel patches, options: [ true / false ]
 auto_patch="false"
 # Set custom signature for the kernel
-custom_name=""
+custom_name="-ophub"
 # Set the kernel compile object, options: [ dtbs / all ]
 package_list="all"
 
-# Cross compile toolchain download mirror
+# Compile toolchain download mirror, run on Armbian
 dev_repo="https://github.com/ophub/kernel/releases/download/dev"
 # Arm GNU Toolchain source: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
-gun_file_x86_64="arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz"
-gun_file_aarch64="arm-gnu-toolchain-13.2.rel1-aarch64-aarch64-none-elf.tar.xz"
-# Armenian file source: https://github.com/ophub/amlogic-s9xxx-armbian/releases
-armbian_rootfs_file="armbian.tar.xz"
+gun_file="arm-gnu-toolchain-13.2.rel1-aarch64-aarch64-none-elf.tar.xz"
 # Set the toolchain path
 toolchain_path="/usr/local/toolchain"
 # Set the default cross-compilation toolchain: [ gcc / clang ]
 toolchain_name="gcc"
-
-# QEMU BINARY
-qemu_binary_arm64="qemu-aarch64-static"
 
 # Set font color
 STEPS="[\033[95m STEPS \033[0m]"
@@ -93,34 +87,11 @@ SUCCESS="[\033[92m SUCCESS \033[0m]"
 WARNING="[\033[93m WARNING \033[0m]"
 ERROR="[\033[91m ERROR \033[0m]"
 #
-#==============================================================================================
+#==================================================================================
 
 error_msg() {
-    echo -e "${ERROR} ${1}"
+    echo -e " ${ERROR} ${1}"
     exit 1
-}
-
-mount_try() {
-    # Check mount parameters
-    m_dev="${1}"
-    m_target="${2}"
-    [[ -n "${m_dev}" && -n "${m_target}" ]] || {
-        error_msg "Mount parameter is missing: [ ${m_dev}, ${m_target} ]"
-    }
-
-    t="1"
-    max_try="10"
-    while [[ "${t}" -le "${max_try}" ]]; do
-        mount ${m_dev} ${m_target}
-        if [[ "${?}" -eq "0" ]]; then
-            break
-        else
-            sync && sleep 3
-            umount -f ${m_target} 2>/dev/null
-            t="$((t + 1))"
-        fi
-    done
-    [[ "${t}" -gt "${max_try}" ]] && error_msg "[ ${t} ] attempts to mount failed."
 }
 
 init_var() {
@@ -131,7 +102,7 @@ init_var() {
 
     while [[ -n "${1}" ]]; do
         case "${1}" in
-        -k | --Kernel)
+        -k | --kernel)
             if [[ -n "${2}" ]]; then
                 oldIFS="${IFS}"
                 IFS="_"
@@ -142,7 +113,7 @@ init_var() {
                 error_msg "Invalid -k parameter [ ${2} ]!"
             fi
             ;;
-        -a | --AutoKernel)
+        -a | --autoKernel)
             if [[ -n "${2}" ]]; then
                 auto_kernel="${2}"
                 shift
@@ -175,7 +146,7 @@ init_var() {
                 error_msg "Invalid -p parameter [ ${2} ]!"
             fi
             ;;
-        -r | --Repository)
+        -r | --repo)
             if [[ -n "${2}" ]]; then
                 repo_owner="${2}"
                 shift
@@ -206,33 +177,30 @@ init_var() {
     #
     [[ -n "${code_owner}" ]] || error_msg "The [ -r ] parameter is invalid."
     [[ -n "${code_branch}" ]] || code_branch="${repo_branch}"
+
+    # Check release file
+    [[ -f "${ophub_release_file}" ]] || error_msg "missing [ ${ophub_release_file} ] file."
+
+    # Get values
+    source "${ophub_release_file}"
+    PLATFORM="${PLATFORM}"
+    FDTFILE="${FDTFILE}"
+
+    # Early devices did not add platform parameters, auto-completion
+    [[ -z "${PLATFORM}" && -n "${FDTFILE}" ]] && {
+        [[ ${FDTFILE:0:5} == "meson" ]] && PLATFORM="amlogic" || PLATFORM="rockchip"
+        echo "PLATFORM='${PLATFORM}'" >>${ophub_release_file}
+    }
+    echo -e "${INFO} Armbian PLATFORM: [ ${PLATFORM} ]"
 }
 
 toolchain_check() {
     cd ${current_path}
     echo -e "${STEPS} Start checking the toolchain for compiling the kernel..."
 
-    # Install dependencies for jammy
+    # Install dependencies
     sudo apt-get -qq update
-    if [[ "${arch_info}" == "x86_64" ]]; then
-        sudo apt-get -qq install -y $(cat compile-kernel/tools/script/ubuntu2204-build-armbian-depends)
-    else
-        sudo apt-get -qq install -y $(cat compile-kernel/tools/script/armbian-compile-kernel-depends)
-    fi
-
-    # Download armbian
-    if [[ ! -f "${armbian_file}" ]]; then
-        echo -e "${INFO} Start downloading Armbian rootfs file [ ${armbian_rootfs_file} ]..."
-        rm -rf ${armbian_path} && mkdir -p ${armbian_path}
-        curl -fsSL "${dev_repo}/${armbian_rootfs_file}" -o "${armbian_path}/${armbian_rootfs_file}"
-        [[ "${?}" -eq "0" ]] || error_msg "Armbian file download failed"
-        tar -xJf ${armbian_path}/${armbian_rootfs_file} -C ${armbian_path}
-        # Change other names to armbian.img
-        [[ -f "${armbian_file}" ]] || mv -f ${armbian_path}/*.img ${armbian_file}
-        # Delete download file
-        rm -f ${armbian_path}/${armbian_rootfs_file}
-        [[ -f "${armbian_file}" ]] || error_msg "There is no Armbian rootfs file: [ ${armbian_file} ]"
-    fi
+    sudo apt-get -qq install -y $(cat compile-kernel/tools/script/armbian-compile-kernel-depends)
 
     # Download the cross-compilation toolchain: [ clang / gcc ]
     [[ -d "/etc/apt/sources.list.d" ]] || mkdir -p /etc/apt/sources.list.d
@@ -249,15 +217,6 @@ toolchain_check() {
         export LD="ld.lld"
         export MFLAGS=" LLVM=1 LLVM_IAS=1 "
     else
-        # Choosing Arm GNU Toolchain based on the platform
-        if [[ "${arch_info}" == "x86_64" ]]; then
-            gun_file="${gun_file_x86_64}"
-            gun_bin="aarch64-none-linux-gnu-"
-        else
-            gun_file="${gun_file_aarch64}"
-            gun_bin="aarch64-none-elf-"
-        fi
-
         # Download Arm GNU Toolchain
         [[ -d "${toolchain_path}" ]] || mkdir -p ${toolchain_path}
         if [[ ! -d "${toolchain_path}/${gun_file//.tar.xz/}/bin" ]]; then
@@ -276,12 +235,12 @@ toolchain_check() {
         fi
 
         # Add ${PATH} variable
-        path_os_variable="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
-        path_gcc="${toolchain_path}/${gun_file//.tar.xz/}/bin:${path_os_variable}"
+        path_armbian="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+        path_gcc="${toolchain_path}/${gun_file//.tar.xz/}/bin:${path_armbian}"
         export PATH="${path_gcc}"
 
         # Set cross compilation parameters
-        export CROSS_COMPILE="${toolchain_path}/${gun_file//.tar.xz/}/bin/${gun_bin}"
+        export CROSS_COMPILE="${toolchain_path}/${gun_file//.tar.xz/}/bin/aarch64-none-elf-"
         export CC="${CROSS_COMPILE}gcc"
         export LD="${CROSS_COMPILE}ld.bfd"
         export MFLAGS=""
@@ -297,7 +256,7 @@ query_version() {
 
     # Query the latest kernel in a loop
     i=1
-    for KERNEL_VAR in "${build_kernel[@]}"; do
+    for KERNEL_VAR in ${build_kernel[*]}; do
         echo -e "${INFO} (${i}) Auto query the latest kernel version of the same series for [ ${KERNEL_VAR} ]"
         # Identify the kernel mainline
         MAIN_LINE="$(echo ${KERNEL_VAR} | awk -F '.' '{print $1"."$2}')"
@@ -318,7 +277,8 @@ query_version() {
     done
 
     # Reset the kernel array to the latest kernel version
-    build_kernel=(${tmp_arr_kernels[@]})
+    unset build_kernel
+    build_kernel="${tmp_arr_kernels[*]}"
 }
 
 apply_patch() {
@@ -362,7 +322,6 @@ get_kernel_source() {
 
     [[ -d "${kernel_path}" ]] || mkdir -p ${kernel_path}
 
-    # Download the kernel source code from github.com
     if [[ ! -d "${kernel_path}/${local_kernel_path}" ]]; then
         echo -e "${INFO} Start cloning from [ https://github.com/${server_kernel_repo} -b ${code_branch} ]"
         git clone -q --single-branch --depth=1 --branch=${code_branch} https://github.com/${server_kernel_repo} ${kernel_path}/${local_kernel_path}
@@ -379,10 +338,12 @@ get_kernel_source() {
             # Pull the latest source code of the server
             cd ${kernel_path}/${local_kernel_path}
             git checkout ${code_branch} && git reset --hard origin/${code_branch} && git pull
+            unset kernel_version
             kernel_version="${local_makefile_version}.${local_makefile_patchlevel}.${kernel_sub}"
             echo -e "${INFO} Synchronize the upstream source code, compile the kernel version [ ${kernel_version} ]."
         else
             # Reset to local kernel version number
+            unset kernel_version
             kernel_version="${local_makefile_version}.${local_makefile_patchlevel}.${local_makefile_sublevel}"
             echo -e "${INFO} Use local source code, compile the kernel version [ ${kernel_version} ]."
         fi
@@ -428,21 +389,20 @@ headers_install() {
 
 compile_env() {
     cd ${current_path}
-    echo -e "${STEPS} Start checking local compilation environments..."
+    echo -e "${STEPS} Start checking local compilation environments."
 
     # Get kernel output name
     kernel_outname="${kernel_version}${custom_name}"
-    echo -e "${INFO} Compile kernel output name: [ ${kernel_outname} ]"
+    echo -e "${INFO} Compile kernel output name [ ${kernel_outname} ]. \n"
 
     # Create a temp directory
-    echo -e "${INFO} Create a temp directory: [ ${out_kernel} ]"
-    rm -rf ${out_kernel}/{chroot/,boot/,dtb/,modules/,header/,${kernel_version}/}
-    mkdir -p ${out_kernel}/{chroot/{root/boot/,},boot/,dtb/{allwinner/,amlogic/,rockchip/},modules/,header/,${kernel_version}/}
+    rm -rf ${out_kernel}/{boot/,dtb/,modules/,header/,${kernel_version}/}
+    mkdir -p ${out_kernel}/{boot/,dtb/{allwinner/,amlogic/,rockchip/},modules/,header/,${kernel_version}/}
 
     cd ${kernel_path}/${local_kernel_path}
-    echo -e "${STEPS} Set cross compilation parameters..."
+    echo -e "${STEPS} Set compilation parameters."
 
-    # Set cross compilation parameters
+    # Set compilation parameters
     export ARCH="arm64"
     export LOCALVERSION="${custom_name}"
 
@@ -504,84 +464,84 @@ compile_kernel() {
     # Make kernel
     echo -e "${STEPS} Start compilation kernel [ ${local_kernel_path} ]..."
     make ${MAKE_SET_STRING} Image modules dtbs -j${PROCESS}
+    #make ${MAKE_SET_STRING} bindeb-pkg KDEB_COMPRESS=xz KBUILD_DEBARCH=arm64 -j${PROCESS}
     [[ "${?}" -eq "0" ]] && echo -e "${SUCCESS} The kernel is compiled successfully."
 
     # Install modules
-    echo -e "${STEPS} Install modules..."
+    echo -e "${STEPS} Install modules ..."
     make ${MAKE_SET_STRING} INSTALL_MOD_PATH=${out_kernel}/modules modules_install
     [[ "${?}" -eq "0" ]] && echo -e "${SUCCESS} The modules is installed successfully."
-    STRIP="${CROSS_COMPILE}strip"
-    find ${out_kernel}/modules -name "*.ko" -print0 | xargs -0 ${STRIP} --strip-debug
 
     # Install headers
-    echo -e "${STEPS} Install headers..."
+    echo -e "${STEPS} Install headers ..."
     headers_install
     [[ "${?}" -eq "0" ]] && echo -e "${SUCCESS} The headers is installed successfully."
 }
 
 generate_uinitrd() {
     cd ${current_path}
-    echo -e "${STEPS} Create chroot..."
+    echo -e "${STEPS} Generate uInitrd environment initialization..."
 
-    cp -f ${armbian_file} ${chroot_file}
-
-    # Mount the armbian system
-    tag_rootfs="${chroot_path}/root"
-
-    loop_armbian="$(losetup -P -f --show "${chroot_file}")"
-    [[ -n "${loop_armbian}" ]] || error_msg "losetup ${chroot_file} failed."
-
-    mount_try ${loop_armbian}p2 ${tag_rootfs}
-    mount_try ${loop_armbian}p1 ${tag_rootfs}/boot
-
-    ARMBIAN_PLATFORM="$(cat ${tag_rootfs}/etc/ophub-release 2>/dev/null | grep -E "^PLATFORM=.*" | cut -d"'" -f2)"
-    echo -e "${INFO} Armbian PLATFORM: [ ${ARMBIAN_PLATFORM} ]"
-
-    # Remove current system files for /boot
-    rm -f ${tag_rootfs}/boot/{config-*,initrd.img-*,System.map-*,vmlinuz-*,uInitrd*,*Image}
+    # Backup current system files for /boot
+    echo -e "${INFO} Backup the files in the [ ${boot_backup_path} ] directory."
+    rm -rf ${boot_backup_path} && mkdir -p ${boot_backup_path}
+    mv -f /boot/{config-*,initrd.img-*,System.map-*,vmlinuz-*,uInitrd*,*Image} -t ${boot_backup_path}
     # Copy /boot related files into armbian system
-    cp -f ${kernel_path}/${local_kernel_path}/System.map ${tag_rootfs}/boot/System.map-${kernel_outname}
-    cp -f ${kernel_path}/${local_kernel_path}/.config ${tag_rootfs}/boot/config-${kernel_outname}
-    cp -f ${kernel_path}/${local_kernel_path}/arch/arm64/boot/Image ${tag_rootfs}/boot/vmlinuz-${kernel_outname}
-    if [[ "${ARMBIAN_PLATFORM}" == "rockchip" || "${ARMBIAN_PLATFORM}" == "allwinner" ]]; then
-        cp -f ${tag_rootfs}/boot/vmlinuz-${kernel_outname} ${tag_rootfs}/boot/Image
+    cp -f ${kernel_path}/${local_kernel_path}/System.map /boot/System.map-${kernel_outname}
+    cp -f ${kernel_path}/${local_kernel_path}/.config /boot/config-${kernel_outname}
+    cp -f ${kernel_path}/${local_kernel_path}/arch/arm64/boot/Image /boot/vmlinuz-${kernel_outname}
+    if [[ "${PLATFORM}" == "rockchip" || "${PLATFORM}" == "allwinner" ]]; then
+        cp -f /boot/vmlinuz-${kernel_outname} /boot/Image
     else
-        cp -f ${tag_rootfs}/boot/vmlinuz-${kernel_outname} ${tag_rootfs}/boot/zImage
+        cp -f /boot/vmlinuz-${kernel_outname} /boot/zImage
     fi
-    #echo -e "${INFO} Kernel copy results in the [ ${tag_rootfs}/boot ] directory: \n$(ls -l ${tag_rootfs}/boot) \n"
+    #echo -e "${INFO} Kernel copy results in the [ /boot ] directory: \n$(ls -l /boot) \n"
 
-    rm -rf ${tag_rootfs}/usr/lib/modules/*
-    cp -rf ${out_kernel}/modules/lib/modules/${kernel_outname} -t ${tag_rootfs}/usr/lib/modules
-    #echo -e "${INFO} Kernel copy results in the [ ${tag_rootfs}/usr/lib/modules ] directory: \n$(ls -l ${tag_rootfs}/usr/lib/modules) \n"
+    # Backup current system files for /usr/lib/modules
+    echo -e "${INFO} Backup the files in the [ ${modules_backup_path} ] directory."
+    rm -rf ${modules_backup_path} && mkdir -p ${modules_backup_path}
+    mv -f /usr/lib/modules/$(uname -r) -t ${modules_backup_path}
+    # Copy modules files
+    cp -rf ${out_kernel}/modules/lib/modules/${kernel_outname} -t /usr/lib/modules
+    #echo -e "${INFO} Kernel copy results in the [ /usr/lib/modules ] directory: \n$(ls -l /usr/lib/modules) \n"
 
     # COMPRESS: [ gzip | bzip2 | lz4 | lzma | lzop | xz | zstd ]
-    compress_initrd_file="${tag_rootfs}/etc/initramfs-tools/initramfs.conf"
+    compress_initrd_file="/etc/initramfs-tools/initramfs.conf"
     sed -i "/^COMPRESS=/d" ${compress_initrd_file}
     echo "COMPRESS=gzip" >>${compress_initrd_file}
 
-    [[ -f "/usr/bin/${qemu_binary_arm64}" ]] && cp -f /usr/bin/${qemu_binary_arm64} ${tag_rootfs}/usr/bin/
-    #echo -e "${INFO} The [ ${qemu_binary_arm64} ] file copy results: \n$(ls -l ${tag_rootfs}/usr/bin/${qemu_binary_arm64}) \n"
+    cd /boot
+    echo -e "${STEPS} Generate uInitrd file..."
 
-    cp -f ${script_path}/ubuntu_chroot_armbian.sh ${tag_rootfs}/root
-    chmod +x ${tag_rootfs}/root/ubuntu_chroot_armbian.sh
+    # Enable update_initramfs
+    [[ -f "${initramfs_conf}" ]] && sed -i "s|^update_initramfs=.*|update_initramfs=yes|g" ${initramfs_conf}
+
+    # Generate uInitrd file directly under armbian system
+    update-initramfs -c -k ${kernel_outname}
+
+    # Disable update_initramfs
+    [[ -f "${initramfs_conf}" ]] && sed -i "s|^update_initramfs=.*|update_initramfs=no|g" ${initramfs_conf}
+
+    if [[ -f "uInitrd" ]]; then
+        echo -e "${SUCCESS} The initrd.img and uInitrd file is Successfully generated."
+        [[ ! -L "uInitrd" ]] && mv -vf uInitrd uInitrd-${kernel_outname}
+    else
+        echo -e "${WARNING} The initrd.img and uInitrd file not updated."
+    fi
+
+    echo -e "${INFO} File situation in the /boot directory after update: \n$(ls -l *${kernel_outname})"
+
+    # Restore the files in the [ /boot ] directory
+    mv -f *${kernel_outname} ${out_kernel}/boot
+    mv -f ${boot_backup_path}/* -t .
+
+    # Restore the files in the [ /usr/lib/modules ] directory
+    rm -rf /usr/lib/modules/${kernel_outname}
+    mv -f ${modules_backup_path}/* -t /usr/lib/modules
+
+    # Remove temporary backup directory
     sync && sleep 3
-    #echo -e "${INFO} Kernel copy results in the [ ${tag_rootfs}/root ] directory: \n$(ls -l ${tag_rootfs}/root) \n"
-
-    # Enter the armbian system to generate /boot/uInitrd-${kernel_outname} file
-    echo -e "${INFO} Enter the chroot armbian system..."
-    chroot ${tag_rootfs} /bin/bash -c "/root/ubuntu_chroot_armbian.sh ${kernel_outname}"
-    [[ "${?}" -eq "0" && -f "${tag_rootfs}/boot/uInitrd-${kernel_outname}" ]] || error_msg "Create chroot uInitrd-${kernel_outname} file failed."
-
-    cd ${current_path}
-    # Copy the generated uInitrd file to the current system
-    echo -e "${INFO} Copy the generated files from [ ${tag_rootfs}/boot ]"
-    cp -f ${tag_rootfs}/boot/*${kernel_outname} ${out_kernel}/boot
-
-    # Unmount the armbian system
-    sync && sleep 3
-    umount ${tag_rootfs}/boot 2>/dev/null
-    umount ${tag_rootfs} 2>/dev/null
-    losetup -D 2>/dev/null
+    rm -rf ${boot_backup_path} ${modules_backup_path}
 }
 
 packit_dtbs() {
@@ -671,12 +631,11 @@ compile_selection() {
 
 clean_tmp() {
     cd ${current_path}
-    echo -e "${STEPS} Clear the space and update-grub..."
+    echo -e "${STEPS} Clear the space..."
 
     sync && sleep 3
-    rm -rf ${out_kernel}/{chroot/,boot/,dtb/,modules/,header/,${kernel_version}/}
-
-    update-grub 2>/dev/null
+    rm -rf ${out_kernel}/{boot/,dtb/,modules/,header/,${kernel_version}/}
+    rm -rf ${tmp_backup_path}
 
     echo -e "${SUCCESS} All processes have been completed."
 }
@@ -685,7 +644,7 @@ loop_recompile() {
     cd ${current_path}
 
     j="1"
-    for k in "${build_kernel[@]}"; do
+    for k in ${build_kernel[*]}; do
         # kernel_version, such as [ 6.1.15 ]
         kernel_version="${k}"
         # kernel <VERSION> and <PATCHLEVEL>, such as [ 6.1 ]
@@ -714,10 +673,10 @@ loop_recompile() {
 
 # Show welcome message
 echo -e "${STEPS} Welcome to compile kernel! \n"
-echo -e "${INFO} Server running on Ubuntu: [ Release: ${host_release} / Host: ${arch_info} ] \n"
-# Check script permission, supports running on the x86_64 and aarch64 platforms (ubuntu/debian)
+echo -e "${INFO} Server running on Armbian: [ Release: ${host_release} / Host: ${arch_info} ] \n"
+# Check script permission, supports running on Armbian system.
 [[ "$(id -u)" == "0" ]] || error_msg "Please run this script as root: [ sudo ./${0} ]"
-[[ "x86_64 aarch64" == *"${arch_info}"* ]] || error_msg "This script is only supported on the x86_64 and aarch64 platforms."
+[[ "${arch_info}" == "aarch64" ]] || error_msg "The script only supports running under Armbian system."
 
 # Initialize variables
 init_var "${@}"
@@ -733,7 +692,7 @@ echo -e "${INFO} Kernel patch: [ ${auto_patch} ]"
 echo -e "${INFO} Kernel Package: [ ${package_list} ]"
 echo -e "${INFO} kernel signature: [ ${custom_name} ]"
 echo -e "${INFO} Latest kernel version: [ ${auto_kernel} ]"
-echo -e "${INFO} Kernel List: [ $(echo ${build_kernel[@]} | xargs) ] \n"
+echo -e "${INFO} Kernel List: [ $(echo ${build_kernel[*]} | xargs) ] \n"
 
 # Show server start information
 echo -e "${INFO} Server space usage before starting to compile: \n$(df -hT ${current_path}) \n"
