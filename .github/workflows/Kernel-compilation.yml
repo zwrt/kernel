@@ -135,7 +135,7 @@ jobs:
           echo "COMPILE_STARTINGTIME=$(date +"%m.%d.%H%M")" >> $GITHUB_ENV
           
       - name: Compile the kernel for Amlogic s9xxx
-        uses: djzng/kernel@main
+        uses: zwrt/kernel@main
         with:
           build_target: kernel
           kernel_source: ${{ env.KERNEL_SOURCE }}
