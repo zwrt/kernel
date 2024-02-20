@@ -98,17 +98,21 @@ runs:
             echo -e "Start rebuilding Armbian..."
 
             armbian_file="${{ inputs.armbian_path }}"
+            armbian_filename="${armbian_file##*/}"
             armbian_filepath="build/output/images"
             echo -e "Get armbian file input parameters: [ ${armbian_file} ]"
             [[ -z "${armbian_file}" ]] && echo -e "The [ armbian_path ] variable must be specified." && exit 1
             [[ -d "${armbian_filepath}" ]] || mkdir -p ${armbian_filepath}
             if [[ "${armbian_file}" == http* ]]; then
                 echo -e "Download file: [ ${armbian_file} ]"
-                armbian_filename="${armbian_file##*/}"
                 curl -fsSL "${armbian_file}" -o "${armbian_filepath}/${armbian_filename}"
             else
-                echo -e "Copy files: [ ${armbian_file} ]"
-                cp -vf ${GITHUB_WORKSPACE}/${armbian_file} ${armbian_filepath} 2>/dev/null
+                if [[ -z "$(ls ${armbian_filepath}/${armbian_filename} 2>/dev/null)" ]]; then
+                    echo -e "Copy files: [ ${armbian_file} ]"
+                    cp -vf ${GITHUB_WORKSPACE}/${armbian_file} ${armbian_filepath} 2>/dev/null
+                else
+                    echo -e "The [ ${armbian_filepath}/${armbian_filename} ] file already exists, skipping."
+                fi
             fi
             sync
             echo -e "About the ${armbian_filepath} directory: \n$(ls -l ${armbian_filepath} 2>/dev/null)"
@@ -124,7 +128,7 @@ runs:
 
             cd ${GITHUB_ACTION_PATH}/${armbian_filepath}
             echo -e "Check the armbian file name (-trunk_)..."
-            image_file="$(basename $(ls *.img 2>/dev/null | head -n 1))"
+            image_file="$(ls *.img 2>/dev/null | head -n 1)"
             if [[ "${image_file}" =~ "-trunk_" ]]; then
                 echo -e "The armbian file name is correct."
             else
