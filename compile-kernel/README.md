@@ -71,7 +71,7 @@ sudo apt-get install -y $(cat compile-kernel/tools/script/ubuntu2204-build-armbi
     kernel_sign: -yourname
 ```
 
-💡 Note: If you `fork` the repository and made modifications, you need to change the Actions `username` to your own repository when using it, and according to the instructions in items 2-3, [Add TOKEN](../documents/README.md#2-set-up-private-variable-github_token), for example:
+💡 Note: If you `fork` the repository and made modifications, you need to change the Actions `username` to your own repository when using it, for example:
 
 ```yaml
 uses: YOUR-REPO/amlogic-s9xxx-armbian@main
@@ -96,7 +96,7 @@ These parameters correspond to the `local compilation commands`. Please refer to
 
 - ### GitHub Action Output Variables
 
-To upload to `Releases`, you need to add `GITHUB_TOKEN` and `GH_TOKEN` to the repository and set `Workflow read and write permissions`. For more details, see [Usage Instructions](../documents/README.md#2-set-up-private-variable-github_token).
+To upload to `Releases`, you need to set `Workflow read/write permissions` for repository. For more details, see [Usage Instructions](../documents/README.md#2-set-up-private-variable-github_token).
 
 | Parameter                        | Default Value   | Description                            |
 |----------------------------------|-----------------|----------------------------------------|

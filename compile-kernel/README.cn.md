@@ -70,7 +70,7 @@ sudo apt-get install -y $(cat compile-kernel/tools/script/ubuntu2204-build-armbi
     kernel_sign: -yourname
 ```
 
-💡注意: 如果你 `fork` 仓库并进行了修改，使用时须将 Actions 的 `用户名` 改成你自己的仓库，并根据说明中的第 2-3 条 [添加 TOKEN](../documents/README.cn.md#2-设置隐私变量-github_token)，例如：
+💡注意: 如果你 `fork` 仓库并进行了修改，使用时须将 Actions 的 `用户名` 改成你自己的仓库，例如：
 
 ```yaml
 uses: YOUR-REPO/amlogic-s9xxx-armbian@main
@@ -95,7 +95,7 @@ uses: YOUR-REPO/amlogic-s9xxx-armbian@main
 
 - ### GitHub Action 输出变量说明
 
-上传到 `Releases` 需要给仓库添加 `GITHUB_TOKEN` 和 `GH_TOKEN` 并设置 `Workflow 读写权限`，详见[使用说明](../documents/README.cn.md#2-设置隐私变量-github_token)。
+上传到 `Releases` 需要给仓库设置 `Workflow 读写权限`，详见[使用说明](../documents/README.cn.md#2-设置隐私变量-github_token)。
 
 | 参数                               | 默认值                    | 说明                       |
 |-----------------------------------|--------------------------|----------------------------|
