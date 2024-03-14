@@ -74,7 +74,7 @@ auto_patch="false"
 custom_name="-ophub"
 # Set the kernel compile object, options: [ dtbs / all ]
 package_list="all"
-# Set the compression format, options: [ gzip / bzip2 / lz4 / lzma / lzop / xz / zstd ]
+# Set the compression format, options: [ gzip / lzma / xz / zstd ]
 compress_format="xz"
 
 # Compile toolchain download mirror, run on Armbian
@@ -216,6 +216,9 @@ toolchain_check() {
     sudo apt-get -qq update
     sudo apt-get -qq install -y $(cat compile-kernel/tools/script/armbian-compile-kernel-depends)
 
+    # Set the default path
+    path_os_variable="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+
     # Download the cross-compilation toolchain: [ clang / gcc ]
     [[ -d "/etc/apt/sources.list.d" ]] || mkdir -p /etc/apt/sources.list.d
     if [[ "${toolchain_name}" == "clang" ]]; then
@@ -226,6 +229,7 @@ toolchain_check() {
         [[ "${?}" -eq "0" ]] || error_msg "LLVM installation failed."
 
         # Set cross compilation parameters
+        export PATH="${path_os_variable}"
         export CROSS_COMPILE="aarch64-linux-gnu-"
         export CC="clang"
         export LD="ld.lld"
@@ -249,8 +253,7 @@ toolchain_check() {
         fi
 
         # Add ${PATH} variable
-        path_armbian="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
-        path_gcc="${toolchain_path}/${gun_file//.tar.xz/}/bin:${path_armbian}"
+        path_gcc="${toolchain_path}/${gun_file//.tar.xz/}/bin:${path_os_variable}"
         export PATH="${path_gcc}"
 
         # Set cross compilation parameters
@@ -524,13 +527,13 @@ generate_uinitrd() {
     cp -rf ${output_path}/modules/lib/modules/${kernel_outname} -t /usr/lib/modules
     #echo -e "${INFO} Kernel copy results in the [ /usr/lib/modules ] directory: \n$(ls -l /usr/lib/modules) \n"
 
-    # COMPRESS: [ gzip | bzip2 | lz4 | lzma | lzop | xz | zstd ]
+    # COMPRESS: [ gzip | lzma | xz | zstd ]
     [[ "${kernel_outname}" =~ ^5.4.[0-9]+ ]] && compress_format="xz"
     compress_initrd_file="/etc/initramfs-tools/initramfs.conf"
     if [[ -f "${compress_initrd_file}" ]]; then
         sed -i "s|^COMPRESS=.*|COMPRESS=${compress_format}|g" ${compress_initrd_file}
-        mod_info="$(cat ${compress_initrd_file} | grep -E ^COMPRESS=)"
-        echo -e "${INFO} Set the [ ${mod_info} ] in the [ ${compress_initrd_file} ] file."
+        compress_settings="$(cat ${compress_initrd_file} | grep -E ^COMPRESS=)"
+        echo -e "${INFO} Set the [ ${compress_settings} ] in the initramfs.conf file."
     else
         error_msg "The [ ${compress_initrd_file} ] file does not exist."
     fi
@@ -615,6 +618,7 @@ packit_kernel() {
     echo -e "${STEPS} Packing the [ ${kernel_outname} ] boot, modules and header packages..."
 
     cd ${output_path}/boot
+    rm -rf dtb-*
     chmod +x *
     tar -czf boot-${kernel_outname}.tar.gz *
     mv -f *.tar.gz ${output_path}/${kernel_version}
