@@ -192,6 +192,10 @@ init_var() {
     [[ -n "${code_owner}" ]] || error_msg "The [ -r ] parameter is invalid."
     [[ -n "${code_branch}" ]] || code_branch="${repo_branch}"
 
+    # Set compilation parameters
+    export ARCH="arm64"
+    export LOCALVERSION="${custom_name}"
+
     # Check release file
     [[ -f "${ophub_release_file}" ]] || error_msg "missing [ ${ophub_release_file} ] file."
 
@@ -418,10 +422,6 @@ compile_env() {
 
     cd ${kernel_path}/${local_kernel_path}
     echo -e "${STEPS} Set compilation parameters."
-
-    # Set compilation parameters
-    export ARCH="arm64"
-    export LOCALVERSION="${custom_name}"
 
     # Show variable
     echo -e "${INFO} ARCH: [ ${ARCH} ]"
@@ -718,6 +718,7 @@ toolchain_check
 echo -e "${INFO} Kernel compilation toolchain: [ ${toolchain_name} ]"
 echo -e "${INFO} Kernel from: [ ${code_owner} ]"
 echo -e "${INFO} Kernel patch: [ ${auto_patch} ]"
+echo -e "${INFO} Kernel arch: [ ${ARCH} ]"
 echo -e "${INFO} Kernel Package: [ ${package_list} ]"
 echo -e "${INFO} kernel signature: [ ${custom_name} ]"
 echo -e "${INFO} Latest kernel version: [ ${auto_kernel} ]"
