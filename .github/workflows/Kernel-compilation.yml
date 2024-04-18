@@ -91,6 +91,7 @@ jobs:
     - name: Save New Commit Hash
       if: steps.cacheHash.outputs.cache-hit != 'true'
       run: |
+        mkdir -p $GITHUB_OUTPUT
         echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }} > $GITHUB_OUTPUT/commitHash_Kernel510
         echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel54 }} > $GITHUB_OUTPUT/commitHash_Kernel54
         echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel515 }} > $GITHUB_OUTPUT/commitHash_Kernel515
