@@ -16,94 +16,86 @@ on:
     - cron: 10 */4 * * *
     
 env:
+  GITHUB_OUTPUT: ${{ github.workspace }}/output.txt
   KERNEL_SOURCE: unifreq
   KERNEL_VERSION: 5.4.228_5.10.161_5.15.100_6.1.16
   KERNEL_TOOLCHAIN: gcc
   KERNEL_PACKAGE: all
   KERNEL_AUTO: true
+
 jobs:
   Checka:
     runs-on: ubuntu-latest
     env:
       REPO_URL_Kernel510: https://github.com/unifreq/linux-5.10.y
       REPO_BRANCH_Kernel510: main
-      REPO_PATH_Kernel510 : "Kernel_510"
+      REPO_PATH_Kernel510: "Kernel_510"
 
       REPO_URL_Kernel54: https://github.com/unifreq/linux-5.4.y
       REPO_BRANCH_Kernel54: main
-      REPO_PATH_Kernel54 : "Kernel_54"
+      REPO_PATH_Kernel54: "Kernel_54"
       
       REPO_URL_Kernel515: https://github.com/unifreq/linux-5.15.y
       REPO_BRANCH_Kernel515: main
-      REPO_PATH_Kernel515 : "Kernel_515"
+      REPO_PATH_Kernel515: "Kernel_515"
 
       REPO_URL_Kernel6: https://github.com/unifreq/linux-6.1.y
       REPO_BRANCH_Kernel6: main
-      REPO_PATH_Kernel6 : "Kernel_6"
+      REPO_PATH_Kernel6: "Kernel_6"
       
     outputs:
-      output: ${{ steps.outputunifreq.outputs.unifreq }}
-      
+      unifreq: ${{ steps.outputunifreq.outputs.unifreq }}
+    
     steps:
-
-    - name: Get Commit Hash
-      id: getHash
+    - name: Clone and Get Commit Hash
+      id: clone_and_get_hash
       run: |
-      
         git clone --depth 1 $REPO_URL_Kernel510 -b $REPO_BRANCH_Kernel510 $REPO_PATH_Kernel510
         cd $REPO_PATH_Kernel510
         echo "commitHash_Kernel510=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-        cd
         
         git clone --depth 1 $REPO_URL_Kernel54 -b $REPO_BRANCH_Kernel54 $REPO_PATH_Kernel54
         cd $REPO_PATH_Kernel54
         echo "commitHash_Kernel54=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-        cd
         
         git clone --depth 1 $REPO_URL_Kernel515 -b $REPO_BRANCH_Kernel515 $REPO_PATH_Kernel515
         cd $REPO_PATH_Kernel515
         echo "commitHash_Kernel515=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-        cd
         
         git clone --depth 1 $REPO_URL_Kernel6 -b $REPO_BRANCH_Kernel6 $REPO_PATH_Kernel6
         cd $REPO_PATH_Kernel6
         echo "commitHash_Kernel6=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-        cd
         
     - name: Show Commit Head and Combination Heads
       id: combHeader
       run: |
-        echo "commitHash_Kernel510: ${{ steps.getHash.outputs.commitHash_Kernel510 }}"
-        echo "commitHash_Kernel54: ${{ steps.getHash.outputs.commitHash_Kernel54 }}"
-        echo "commitHash_Kernel515: ${{ steps.getHash.outputs.commitHash_Kernel515 }}"
-        echo "commitHash_Kernel6: ${{ steps.getHash.outputs.commitHash_Kernel6 }}"
-        echo "commitHash_All=\
-          ${{steps.getHash.outputs.commitHash_Kernel510}}\
-          ${{steps.getHash.outputs.commitHash_Kernel54}}\
-          ${{steps.getHash.outputs.commitHash_Kernel515}}\
-          ${{steps.getHash.outputs.commitHash_Kernel6}}" >> $GITHUB_OUTPUT
-          
+        echo "commitHash_Kernel510: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }}"
+        echo "commitHash_Kernel54: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel54 }}"
+        echo "commitHash_Kernel515: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel515 }}"
+        echo "commitHash_Kernel6: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel6 }}"
+        echo "commitHash_All=${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel54 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel515 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel6 }}" >> $GITHUB_OUTPUT
+        
     - name: Compare Commit Hash
       id: cacheHash
       uses: actions/cache@main
       with:
-        path: .commitHash_All
-        key: HEAD-${{ steps.combHeader.outputs.commitHash_All }}
+        path: ${{ github.workspace }}
+        key: ${{ runner.os }}-commitHash-${{ steps.combHeader.outputs.commitHash_All }}
    
     - name: Set output for next job
       id: outputunifreq
       if: steps.cacheHash.outputs.cache-hit == 'true'
       run: |
-        echo "unifreq=hello" >> $GITHUB_OUTPUT
+        echo "::set-output name=unifreq::hello"
         
     - name: Save New Commit Hash
       if: steps.cacheHash.outputs.cache-hit != 'true'
       run: |
-        echo ${{ steps.getHash.outputs.commitHash_Kernel510 }} | tee .commitHash_Kernel510
-        echo ${{ steps.getHash.outputs.commitHash_Kernel54 }} | tee .commitHash_Kernel54
-        echo ${{ steps.getHash.outputs.commitHash_Kernel515 }} | tee .commitHash_Kernel515
-        echo ${{ steps.getHash.outputs.commitHash_Kernel6 }} | tee .commitHash_Kernel6
-        echo ${{ steps.combHeader.outputs.commitHash_All }} | tee .commitHash_All 
+        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }} > $GITHUB_WORKSPACE/commitHash_Kernel510
+        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel54 }} > $GITHUB_WORKSPACE/commitHash_Kernel54
+        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel515 }} > $GITHUB_WORKSPACE/commitHash_Kernel515
+        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel6 }} > $GITHUB_WORKSPACE/commitHash_Kernel6
+        echo "${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel54 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel515 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel6 }}" > $GITHUB_WORKSPACE/commitHash_All
 # /////////////////////////////////////////////////////////////////////////////////////////////////////////        
   Build_Kernel:
     needs: [Checka]   
