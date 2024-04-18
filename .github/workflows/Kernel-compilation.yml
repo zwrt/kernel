@@ -91,12 +91,11 @@ jobs:
     - name: Save New Commit Hash
       if: steps.cacheHash.outputs.cache-hit != 'true'
       run: |
-        mkdir -p $GITHUB_OUTPUT
-        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }} > $GITHUB_OUTPUT/commitHash_Kernel510
-        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel54 }} > $GITHUB_OUTPUT/commitHash_Kernel54
-        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel515 }} > $GITHUB_OUTPUT/commitHash_Kernel515
-        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel6 }} > $GITHUB_OUTPUT/commitHash_Kernel6
-        echo "${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel54 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel515 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel6 }}" > $GITHUB_OUTPUT/commitHash_All
+        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }} > $GITHUB_WORKSPACE/commitHash_Kernel510
+        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel54 }} > $GITHUB_WORKSPACE/commitHash_Kernel54
+        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel515 }} > $GITHUB_WORKSPACE/commitHash_Kernel515
+        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel6 }} > $GITHUB_WORKSPACE/commitHash_Kernel6
+        echo "${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel54 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel515 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel6 }}" > $GITHUB_WORKSPACE/commitHash_All
 # /////////////////////////////////////////////////////////////////////////////////////////////////////////        
   Build_Kernel:
     needs: [Checka]   
