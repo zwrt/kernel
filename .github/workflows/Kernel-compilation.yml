@@ -87,7 +87,7 @@ jobs:
       id: outputunifreq
       if: steps.cacheHash.outputs.cache-hit == 'true'
       run: |
-        echo "::set-output name=unifreq::hello"
+        echo "unifreq=hello" >> $GITHUB_OUTPUT
         
     - name: Save New Commit Hash
       if: steps.cacheHash.outputs.cache-hit != 'true'
