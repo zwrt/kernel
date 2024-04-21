@@ -137,7 +137,7 @@ jobs:
           kernel_package: ${{ env.KERNEL_PACKAGE }}
           kernel_sign: ${{ github.event.inputs.kernel_sign }}
           kernel_toolchain: ${{ env.KERNEL_TOOLCHAIN }}
-          compress_format: ${{ inputs.compress_format }}
+          compress_format: ${{ inputs.COMPRESS_FORMAT }}
 
       - name: Upload Kernel to Release
         uses: ncipollo/release-action@main
