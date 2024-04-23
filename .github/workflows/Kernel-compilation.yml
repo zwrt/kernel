@@ -16,13 +16,7 @@ on:
     - cron: 10 */4 * * *
     
 env:
-  GITHUB_OUTPUT: ${{ github.workspace }}/output.txt
-  KERNEL_SOURCE: unifreq
-  #KERNEL_VERSION: 5.4.228_5.10.161_5.15.100_6.1.16
-  KERNEL_TOOLCHAIN: gcc
-  KERNEL_PACKAGE: all
-  COMPRESS_FORMAT: xz
-  KERNEL_AUTO: true
+  TZ: Asia/Shanghai
 
 jobs:
   Checka:
@@ -133,7 +127,7 @@ jobs:
           #sudo -E apt-get -y full-upgrade
           sudo -E apt-get -y autoremove --purge
           sudo -E apt-get clean
-          sudo timedatectl set-timezone "Asia/Shanghai"
+          sudo timedatectl set-timezone "${TZ}"
           echo "COMPILE_STARTINGTIME=$(date +"%m.%d.%H%M")" >> $GITHUB_ENV
           
       - name: Compile the kernel for Amlogic s9xxx
@@ -188,7 +182,7 @@ jobs:
           #sudo -E apt-get -y full-upgrade
           sudo -E apt-get -y autoremove --purge
           sudo -E apt-get clean
-          sudo timedatectl set-timezone "Asia/Shanghai"
+          sudo timedatectl set-timezone "${TZ}"
           echo "COMPILE_STARTINGTIME=$(date +"%m.%d.%H%M")" >> $GITHUB_ENV
           
       - name: Compile the kernel for Amlogic s9xxx
@@ -243,7 +237,7 @@ jobs:
           #sudo -E apt-get -y full-upgrade
           sudo -E apt-get -y autoremove --purge
           sudo -E apt-get clean
-          sudo timedatectl set-timezone "Asia/Shanghai"
+          sudo timedatectl set-timezone "${TZ}"
           echo "COMPILE_STARTINGTIME=$(date +"%m.%d.%H%M")" >> $GITHUB_ENV
           
       - name: Compile the kernel for Amlogic s9xxx
@@ -298,7 +292,7 @@ jobs:
           #sudo -E apt-get -y full-upgrade
           sudo -E apt-get -y autoremove --purge
           sudo -E apt-get clean
-          sudo timedatectl set-timezone "Asia/Shanghai"
+          sudo timedatectl set-timezone "${TZ}"
           echo "COMPILE_STARTINGTIME=$(date +"%m.%d.%H%M")" >> $GITHUB_ENV
           
       - name: Compile the kernel for Amlogic s9xxx
@@ -353,7 +347,7 @@ jobs:
           #sudo -E apt-get -y full-upgrade
           sudo -E apt-get -y autoremove --purge
           sudo -E apt-get clean
-          sudo timedatectl set-timezone "Asia/Shanghai"
+          sudo timedatectl set-timezone "${TZ}"
           echo "COMPILE_STARTINGTIME=$(date +"%m.%d.%H%M")" >> $GITHUB_ENV
           
       - name: Compile the kernel for Amlogic s9xxx
