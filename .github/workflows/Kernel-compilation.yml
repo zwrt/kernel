@@ -22,13 +22,13 @@ jobs:
   Checka:
     runs-on: ubuntu-latest
     env:
-      REPO_URL_Kernel510: https://github.com/unifreq/linux-5.10.y
-      REPO_BRANCH_Kernel510: main
-      REPO_PATH_Kernel510: "Kernel_510"
-
       REPO_URL_Kernel54: https://github.com/unifreq/linux-5.4.y
       REPO_BRANCH_Kernel54: main
       REPO_PATH_Kernel54: "Kernel_54"
+
+      REPO_URL_Kernel510: https://github.com/unifreq/linux-5.10.y
+      REPO_BRANCH_Kernel510: main
+      REPO_PATH_Kernel510: "Kernel_510"
       
       REPO_URL_Kernel515: https://github.com/unifreq/linux-5.15.y
       REPO_BRANCH_Kernel515: main
@@ -49,13 +49,13 @@ jobs:
     - name: Clone and Get Commit Hash
       id: clone_and_get_hash
       run: |
-        git clone --depth 1 $REPO_URL_Kernel510 -b $REPO_BRANCH_Kernel510 $REPO_PATH_Kernel510
-        cd $REPO_PATH_Kernel510
-        echo "commitHash_Kernel510=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-        
         git clone --depth 1 $REPO_URL_Kernel54 -b $REPO_BRANCH_Kernel54 $REPO_PATH_Kernel54
         cd $REPO_PATH_Kernel54
         echo "commitHash_Kernel54=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+        
+        git clone --depth 1 $REPO_URL_Kernel510 -b $REPO_BRANCH_Kernel510 $REPO_PATH_Kernel510
+        cd $REPO_PATH_Kernel510
+        echo "commitHash_Kernel510=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
         
         git clone --depth 1 $REPO_URL_Kernel515 -b $REPO_BRANCH_Kernel515 $REPO_PATH_Kernel515
         cd $REPO_PATH_Kernel515
@@ -72,8 +72,8 @@ jobs:
     - name: Show Commit Head and Combination Heads
       id: combHeader
       run: |
-        echo "commitHash_Kernel510: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }}"
         echo "commitHash_Kernel54: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel54 }}"
+        echo "commitHash_Kernel510: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }}"
         echo "commitHash_Kernel515: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel515 }}"
         echo "commitHash_Kernel61: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel61 }}"
         echo "commitHash_Kernel66: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel66 }}"
@@ -94,14 +94,13 @@ jobs:
     - name: Save New Commit Hash
       if: steps.cacheHash.outputs.cache-hit != 'true'
       run: |
-        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }} > $GITHUB_WORKSPACE/commitHash_Kernel510
         echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel54 }} > $GITHUB_WORKSPACE/commitHash_Kernel54
+        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }} > $GITHUB_WORKSPACE/commitHash_Kernel510
         echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel515 }} > $GITHUB_WORKSPACE/commitHash_Kernel515
         echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel61 }} > $GITHUB_WORKSPACE/commitHash_Kernel61
         echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel66 }} > $GITHUB_WORKSPACE/commitHash_Kernel66
-        #echo "${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel54 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel515 }} ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel6 }}" > $GITHUB_WORKSPACE/commitHash_All
 # /////////////////////////////////////////////////////////////////////////////////////////////////////////        
-  Build_Kernel1:
+  Build_Kernel54:
     needs: [Checka]   
     if: ${{ needs.Checka.outputs.output != 'hello' || github.event.inputs.checkupdates == 'true'}}
     runs-on: ubuntu-22.04
@@ -156,7 +155,7 @@ jobs:
           body: |
             - 这是`稳定版`内核，可以在 Armbian 和 OpenWrt 里使用。
 
-  Build_Kernel2:
+  Build_Kernel510:
     needs: [Checka]   
     if: ${{ needs.Checka.outputs.output != 'hello' || github.event.inputs.checkupdates == 'true'}}
     runs-on: ubuntu-22.04
@@ -211,7 +210,7 @@ jobs:
           body: |
             - 这是`稳定版`内核，可以在 Armbian 和 OpenWrt 里使用。
 
-  Build_Kernel3:
+  Build_Kernel515:
     needs: [Checka]   
     if: ${{ needs.Checka.outputs.output != 'hello' || github.event.inputs.checkupdates == 'true'}}
     runs-on: ubuntu-22.04
@@ -266,7 +265,7 @@ jobs:
           body: |
             - 这是`稳定版`内核，可以在 Armbian 和 OpenWrt 里使用。
 
-  Build_Kernel4:
+  Build_Kernel61:
     needs: [Checka]   
     if: ${{ needs.Checka.outputs.output != 'hello' || github.event.inputs.checkupdates == 'true'}}
     runs-on: ubuntu-22.04
@@ -321,7 +320,7 @@ jobs:
           body: |
             - 这是`稳定版`内核，可以在 Armbian 和 OpenWrt 里使用。
 
-  Build_Kernel5:
+  Build_Kernel66:
     needs: [Checka]   
     if: ${{ needs.Checka.outputs.output != 'hello' || github.event.inputs.checkupdates == 'true'}}
     runs-on: ubuntu-22.04
