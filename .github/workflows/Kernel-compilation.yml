@@ -51,39 +51,39 @@ jobs:
       run: |
         git clone --depth 1 $REPO_URL_Kernel54 -b $REPO_BRANCH_Kernel54 $REPO_PATH_Kernel54
         cd $REPO_PATH_Kernel54
-        echo "commitHash_Kernel54=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+        echo "commitHash_Kernel54=$(git rev-parse HEAD)" >> $GITHUB_ENV
         
         git clone --depth 1 $REPO_URL_Kernel510 -b $REPO_BRANCH_Kernel510 $REPO_PATH_Kernel510
         cd $REPO_PATH_Kernel510
-        echo "commitHash_Kernel510=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+        echo "commitHash_Kernel510=$(git rev-parse HEAD)" >> $GITHUB_ENV
         
         git clone --depth 1 $REPO_URL_Kernel515 -b $REPO_BRANCH_Kernel515 $REPO_PATH_Kernel515
         cd $REPO_PATH_Kernel515
-        echo "commitHash_Kernel515=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+        echo "commitHash_Kernel515=$(git rev-parse HEAD)" >> $GITHUB_ENV
         
         git clone --depth 1 $REPO_URL_Kernel61 -b $REPO_BRANCH_Kernel61 $REPO_PATH_Kernel61
         cd $REPO_PATH_Kernel61
-        echo "commitHash_Kernel61=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+        echo "commitHash_Kernel61=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
         git clone --depth 1 $REPO_URL_Kernel66 -b $REPO_BRANCH_Kernel66 $REPO_PATH_Kernel66
         cd $REPO_PATH_Kernel66
-        echo "commitHash_Kernel66=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+        echo "commitHash_Kernel66=$(git rev-parse HEAD)" >> $GITHUB_ENV
         
     - name: Show Commit Head and Combination Heads
       id: combHeader
       run: |
-        echo "commitHash_Kernel54: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel54 }}"
-        echo "commitHash_Kernel510: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }}"
-        echo "commitHash_Kernel515: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel515 }}"
-        echo "commitHash_Kernel61: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel61 }}"
-        echo "commitHash_Kernel66: ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel66 }}"
+        echo "commitHash_Kernel54: ${{ env.commitHash_Kernel54 }}"
+        echo "commitHash_Kernel510: ${{ env.commitHash_Kernel510 }}"
+        echo "commitHash_Kernel515: ${{ env.commitHash_Kernel515 }}"
+        echo "commitHash_Kernel61: ${{ env.commitHash_Kernel61 }}"
+        echo "commitHash_Kernel66: ${{ env.commitHash_Kernel66 }}"
         
     - name: Compare Commit Hash
       id: cacheHash
       uses: actions/cache@main
       with:
         path: ${{ github.workspace }}
-        key: ${{ runner.os }}-commitHash-${{ steps.combHeader.outputs.commitHash_Kernel510 }} ${{ steps.combHeader.outputs.commitHash_Kernel54 }} ${{ steps.combHeader.outputs.commitHash_Kernel515 }} ${{ steps.combHeader.outputs.commitHash_Kernel61 }} ${{ steps.combHeader.outputs.commitHash_Kernel66 }}
+        key: ${{ runner.os }}-commitHash-${{ env.commitHash_Kernel510 }}-${{ env.commitHash_Kernel54 }}-${{ env.commitHash_Kernel515 }}-${{ env.commitHash_Kernel61 }}-${{ env.commitHash_Kernel66 }}
    
     - name: Set output for next job
       id: outputunifreq
@@ -94,11 +94,11 @@ jobs:
     - name: Save New Commit Hash
       if: steps.cacheHash.outputs.cache-hit != 'true'
       run: |
-        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel54 }} > $GITHUB_WORKSPACE/commitHash_Kernel54
-        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel510 }} > $GITHUB_WORKSPACE/commitHash_Kernel510
-        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel515 }} > $GITHUB_WORKSPACE/commitHash_Kernel515
-        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel61 }} > $GITHUB_WORKSPACE/commitHash_Kernel61
-        echo ${{ steps.clone_and_get_hash.outputs.commitHash_Kernel66 }} > $GITHUB_WORKSPACE/commitHash_Kernel66
+        echo ${{ env.commitHash_Kernel54 }} > $GITHUB_WORKSPACE/commitHash_Kernel54
+        echo ${{ env.commitHash_Kernel510 }} > $GITHUB_WORKSPACE/commitHash_Kernel510
+        echo ${{ env.commitHash_Kernel515 }} > $GITHUB_WORKSPACE/commitHash_Kernel515
+        echo ${{ env.commitHash_Kernel61 }} > $GITHUB_WORKSPACE/commitHash_Kernel61
+        echo ${{ env.commitHash_Kernel66 }} > $GITHUB_WORKSPACE/commitHash_Kernel66
 # /////////////////////////////////////////////////////////////////////////////////////////////////////////        
   Build_Kernel54:
     needs: [Checka]   
