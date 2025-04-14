@@ -323,7 +323,7 @@ jobs:
   Build_Kernel66:
     needs: [Checka]   
     if: ${{ needs.Checka.outputs.output != 'hello' || github.event.inputs.checkupdates == 'true'}}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04-large
 
     steps:
       - name: Checkout
