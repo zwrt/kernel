@@ -547,7 +547,7 @@ jobs:
  # //////////////////////////////////////////////////////////////////////////////////////////////
   Cleaning:
     if: ${{ always() }}
-    needs: [Checka,Build_Kernel54,Build_Kernel510,Build_Kernel515,Build_Kernel61,Build_Kernel66]    
+    needs: [Checka,Build_Kernel54,Build_Kernel510,Build_Kernel515,Build_Kernel61,Build_Kernel612,Build_Kernel66]    
     runs-on: ubuntu-latest
     steps:  
       - name: Delete workflow runs
