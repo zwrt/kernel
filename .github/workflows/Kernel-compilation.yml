@@ -175,12 +175,16 @@ jobs:
         with:
           build_target: kernel
           kernel_source: ${{ env.KERNEL_SOURCE }}
-          kernel_version: 5.4.228
-          kernel_auto: ${{ env.KERNEL_AUTO }}
-          kernel_package: ${{ env.KERNEL_PACKAGE }}
-          kernel_sign: ${{ github.event.inputs.kernel_sign }}
-          kernel_toolchain: ${{ env.KERNEL_TOOLCHAIN }}
-          compress_format: ${{ inputs.COMPRESS_FORMAT }}
+          # kernel_version: 5.4.228
+          kernel_version: ${{ inputs.kernel_version }}
+          kernel_auto: ${{ inputs.kernel_auto }}
+          delete_source: ${{ inputs.delete_source }}
+          kernel_package: ${{ inputs.kernel_package }}
+          kernel_toolchain: ${{ inputs.kernel_toolchain }}
+          kernel_sign: ${{ inputs.kernel_sign }}
+          kernel_config: ${{ inputs.kernel_config }}
+          compress_format: ${{ inputs.compress_format }}
+          silent_log: ${{ inputs.silent_log }}
 
       - name: Upload Kernel to Release
         uses: ncipollo/release-action@main
@@ -347,12 +351,16 @@ jobs:
         with:
           build_target: kernel
           kernel_source: ${{ env.KERNEL_SOURCE }}
-          kernel_version: 5.15.100
-          kernel_auto: ${{ env.KERNEL_AUTO }}
-          kernel_package: ${{ env.KERNEL_PACKAGE }}
-          kernel_sign: ${{ github.event.inputs.kernel_sign }}
-          kernel_toolchain: ${{ env.KERNEL_TOOLCHAIN }}
-          compress_format: ${{ inputs.COMPRESS_FORMAT }}
+          # kernel_version: 5.15.100
+          kernel_version: ${{ inputs.kernel_version }}
+          kernel_auto: ${{ inputs.kernel_auto }}
+          delete_source: ${{ inputs.delete_source }}
+          kernel_package: ${{ inputs.kernel_package }}
+          kernel_toolchain: ${{ inputs.kernel_toolchain }}
+          kernel_sign: ${{ inputs.kernel_sign }}
+          kernel_config: ${{ inputs.kernel_config }}
+          compress_format: ${{ inputs.compress_format }}
+          silent_log: ${{ inputs.silent_log }}
 
       - name: Upload Kernel to Release
         uses: ncipollo/release-action@main
@@ -433,12 +441,16 @@ jobs:
         with:
           build_target: kernel
           kernel_source: ${{ env.KERNEL_SOURCE }}
-          kernel_version: 6.1.16
-          kernel_auto: ${{ env.KERNEL_AUTO }}
-          kernel_package: ${{ env.KERNEL_PACKAGE }}
-          kernel_sign: ${{ github.event.inputs.kernel_sign }}
-          kernel_toolchain: ${{ env.KERNEL_TOOLCHAIN }}
-          compress_format: ${{ inputs.COMPRESS_FORMAT }}
+          # kernel_version: 6.1.16
+          kernel_version: ${{ inputs.kernel_version }}
+          kernel_auto: ${{ inputs.kernel_auto }}
+          delete_source: ${{ inputs.delete_source }}
+          kernel_package: ${{ inputs.kernel_package }}
+          kernel_toolchain: ${{ inputs.kernel_toolchain }}
+          kernel_sign: ${{ inputs.kernel_sign }}
+          kernel_config: ${{ inputs.kernel_config }}
+          compress_format: ${{ inputs.compress_format }}
+          silent_log: ${{ inputs.silent_log }}
 
       - name: Upload Kernel to Release
         uses: ncipollo/release-action@main
@@ -519,12 +531,16 @@ jobs:
         with:
           build_target: kernel
           kernel_source: ${{ env.KERNEL_SOURCE }}
-          kernel_version: 6.12.16
-          kernel_auto: ${{ env.KERNEL_AUTO }}
-          kernel_package: ${{ env.KERNEL_PACKAGE }}
-          kernel_sign: ${{ github.event.inputs.kernel_sign }}
-          kernel_toolchain: ${{ env.KERNEL_TOOLCHAIN }}
-          compress_format: ${{ inputs.COMPRESS_FORMAT }}
+          # kernel_version: 6.12.16
+          kernel_version: ${{ inputs.kernel_version }}
+          kernel_auto: ${{ inputs.kernel_auto }}
+          delete_source: ${{ inputs.delete_source }}
+          kernel_package: ${{ inputs.kernel_package }}
+          kernel_toolchain: ${{ inputs.kernel_toolchain }}
+          kernel_sign: ${{ inputs.kernel_sign }}
+          kernel_config: ${{ inputs.kernel_config }}
+          compress_format: ${{ inputs.compress_format }}
+          silent_log: ${{ inputs.silent_log }}
 
       - name: Upload Kernel to Release
         uses: ncipollo/release-action@main
@@ -605,12 +621,16 @@ jobs:
         with:
           build_target: kernel
           kernel_source: ${{ env.KERNEL_SOURCE }}
-          kernel_version: 6.6.1
-          kernel_auto: ${{ env.KERNEL_AUTO }}
-          kernel_package: ${{ env.KERNEL_PACKAGE }}
-          kernel_sign: ${{ github.event.inputs.kernel_sign }}
-          kernel_toolchain: ${{ env.KERNEL_TOOLCHAIN }}
-          compress_format: ${{ inputs.COMPRESS_FORMAT }}
+          # kernel_version: 6.6.1
+          kernel_version: ${{ inputs.kernel_version }}
+          kernel_auto: ${{ inputs.kernel_auto }}
+          delete_source: ${{ inputs.delete_source }}
+          kernel_package: ${{ inputs.kernel_package }}
+          kernel_toolchain: ${{ inputs.kernel_toolchain }}
+          kernel_sign: ${{ inputs.kernel_sign }}
+          kernel_config: ${{ inputs.kernel_config }}
+          compress_format: ${{ inputs.compress_format }}
+          silent_log: ${{ inputs.silent_log }}
 
       - name: Upload Kernel to Release
         uses: ncipollo/release-action@main
