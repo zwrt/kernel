@@ -31,6 +31,8 @@ armbian_rootfs_file="*rootfs.tar.gz"
 docker_path="${current_path}/compile-kernel/tools/script/docker"
 tmp_path="${current_path}/tmp"
 out_path="${current_path}/out"
+compile_path="${current_path}/compile-kernel"
+kernel_script="${compile_path}/tools/script/armbian_compile_kernel_script.sh"
 
 # Set default parameters
 STEPS="[\033[95m STEPS \033[0m]"
@@ -82,12 +84,20 @@ find_armbian() {
     [[ -f "${docker_path}/Dockerfile" ]] || error_msg "Missing Dockerfile."
 }
 
-
 make_dockerimg() {
-    cd ${tmp_path}
+    cd ${current_path}
     echo -e "${STEPS} Start making docker image..."
 
     # Make docker image
+    echo -e "${INFO} Unpack Armbian."
+    rm -rf ${tmp_path} && mkdir -p ${tmp_path}
+    tar -xzf ${armbian_path}/${armbian_file_name} -C ${tmp_path}
+
+    cd ${tmp_path}
+    # Add script for compile kernel
+    cp -af --no-preserve=ownership ${compile_path} opt/
+    cp -f --no-preserve=ownership ${kernel_script} opt/recompile
+
     tar -czf armbian-${version_codename}-rootfs.tar.gz *
     [[ "${?}" -eq "0" ]] || error_msg "Docker image creation failed."
 

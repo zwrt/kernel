@@ -22,8 +22,7 @@ build_path="${current_path}/build"
 image_path="${build_path}/output/images"
 cache_path="${build_path}/cache/rootfs"
 tmp_rootfs="${image_path}/tmp_rootfs"
-compile_path="${current_path}/compile-kernel"
-kernel_script="${compile_path}/tools/script/armbian_compile_kernel_script.sh"
+
 #
 # Set font color
 STEPS="[\033[95m STEPS \033[0m]"
@@ -95,11 +94,6 @@ redo_rootfs() {
         sudo tar -mxf ${rootfs_file} -C ${tmp_rootfs}/
 
         cd ${tmp_rootfs}/
-        # Add script for compile kernel
-        cp -af --no-preserve=ownership ${compile_path} opt/
-        cp -f --no-preserve=ownership ${kernel_script} opt/recompile
-
-        # Compress rootfs file
         sudo tar -czf ${rootfs_save_name}.tar.gz *
         sudo mv -f ${rootfs_save_name}.tar.gz ../
         [[ "${?}" == "0" ]] && echo -e "${INFO} 02. Making Armbian rootfs completed." || error_msg "02. Failed to redo rootfs!"
