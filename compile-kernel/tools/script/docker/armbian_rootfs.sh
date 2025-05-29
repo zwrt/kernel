@@ -87,7 +87,7 @@ redo_rootfs() {
     # Create temporary directory
     mkdir -p ${tmp_rootfs}
     sudo chown root:root ${tmp_rootfs}
-    [[ "${?}" == "0" ]] && echo -e "${INFO} 01. Temporary directory creation completed." || error_msg "01. Failed to create directory!"
+    [[ "${?}" == "0" ]] && echo -e "${INFO} 01. Creating temporary directory completed." || error_msg "01. Failed to create directory!"
 
     # Redo Armbian rootfs
     if [[ -n "${rootfs_file}" ]]; then
@@ -103,14 +103,14 @@ redo_rootfs() {
             sudo sed -i "s|^#*PermitRootLogin .*|PermitRootLogin yes|g" ${ssh_config}
             sudo sed -i "s|^#*PasswordAuthentication .*|PasswordAuthentication yes|g" ${ssh_config}
             [[ -d "var/run/sshd" ]] || mkdir -p -m0755 var/run/sshd
-            echo -e "${INFO} 03. sshd_condig adjustment completed."
+            echo -e "${INFO} 03. Adjusting sshd_config completed."
         } || error_msg "03. Failed to adjust sshd_config!"
 
         # Set root password to 1234
         [[ -f "etc/shadow" ]] && {
             rootnewpasswd="$(openssl passwd -6 "1234")"
             sudo sed -i "s|^root:\*|root:${rootnewpasswd}|" etc/shadow
-            echo -e "${INFO} 04. Adjust the default account completed."
+            echo -e "${INFO} 04. Adjusting the default account completed."
         } || error_msg "04. Failed to adjust root password!"
 
         # Compress the rootfs file
