@@ -51,7 +51,7 @@ error_msg() {
 check_depends() {
     # Check the necessary dependencies
     is_dpkg="0"
-    dpkg_packages=("tar" "gzip")
+    dpkg_packages=("tar" "gzip" "openssl")
     i="1"
     for package in ${dpkg_packages[*]}; do
         [[ -n "$(dpkg -l | awk '{print $2}' | grep -w "^${package}$" 2>/dev/null)" ]] || is_dpkg="1"
@@ -95,8 +95,28 @@ make_dockerimg() {
 
     cd ${tmp_path}
     # Add script for compile kernel
+    echo -e "${INFO} Copying files to the /opt directory..."
     cp -af --no-preserve=ownership ${compile_path} opt/
     cp -f --no-preserve=ownership ${kernel_script} opt/recompile
+    echo -e "/opt directory situation:\n$(ls -lh opt/)"
+
+    # Set sshd configuration
+    echo -e "${INFO} Adjusting SSHD configuration..."
+    ssh_config="etc/ssh/sshd_config"
+    [[ -f "${ssh_config}" ]] && {
+        sed -i "s|^#*Port .*|Port 22|g" ${ssh_config}
+        sed -i "s|^#*PermitRootLogin .*|PermitRootLogin yes|g" ${ssh_config}
+        sed -i "s|^#*PasswordAuthentication .*|PasswordAuthentication yes|g" ${ssh_config}
+        [[ -d "var/run/sshd" ]] || mkdir -p -m0755 var/run/sshd
+    }
+    [[ "${?}" -eq "0" ]] || error_msg "SSHD configuration adjustment failed."
+
+    # Set root password to 1234
+    [[ -f "etc/shadow" ]] && {
+        echo -e "${INFO} Adjusting root password to 1234"
+        rootnewpasswd="$(openssl passwd -6 "1234")"
+        sed -i "s|^root:\*|root:${rootnewpasswd}|" etc/shadow
+    }
 
     tar -czf armbian-${version_codename}-rootfs.tar.gz *
     [[ "${?}" -eq "0" ]] || error_msg "Docker image creation failed."
