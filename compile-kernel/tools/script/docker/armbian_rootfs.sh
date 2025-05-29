@@ -99,19 +99,18 @@ redo_rootfs() {
         # SSH access is enabled by default
         ssh_config="etc/ssh/sshd_config"
         [[ -f "${ssh_config}" ]] && {
-            sed -i "s|^#*Port .*|Port 22|g" ${ssh_config}
-            sed -i "s|^#*PermitRootLogin .*|PermitRootLogin yes|g" ${ssh_config}
-            sed -i "s|^#*PasswordAuthentication .*|PasswordAuthentication yes|g" ${ssh_config}
+            sudo sed -i "s|^#*Port .*|Port 22|g" ${ssh_config}
+            sudo sed -i "s|^#*PermitRootLogin .*|PermitRootLogin yes|g" ${ssh_config}
+            sudo sed -i "s|^#*PasswordAuthentication .*|PasswordAuthentication yes|g" ${ssh_config}
             [[ -d "var/run/sshd" ]] || mkdir -p -m0755 var/run/sshd
             echo -e "${INFO} 03. sshd_condig adjustment completed."
         } || error_msg "03. Failed to adjust sshd_config!"
 
         # Set root password to 1234
         [[ -f "etc/shadow" ]] && {
-            echo -e "${INFO} "
             rootnewpasswd="$(openssl passwd -6 "1234")"
-            sed -i "s|^root:\*|root:${rootnewpasswd}|" etc/shadow
-            echo -e "${INFO} 04. Adjusting root password to 1234 completed."
+            sudo sed -i "s|^root:\*|root:${rootnewpasswd}|" etc/shadow
+            echo -e "${INFO} 04. Adjust the default account completed."
         } || error_msg "04. Failed to adjust root password!"
 
         # Compress the rootfs file
