@@ -555,8 +555,9 @@ generate_uinitrd() {
     # Backup current system files for /boot
     echo -e "${INFO} Backup the files in the [ ${boot_backup_path} ] directory."
     rm -rf ${boot_backup_path} && mkdir -p ${boot_backup_path}
-    mv -f /boot/{config-*,initrd.img-*,System.map-*,vmlinuz-*,uInitrd*,*Image} -t ${boot_backup_path}
+    mv -f /boot/{config-*,initrd.img-*,System.map-*,vmlinuz-*,uInitrd*,*Image} -t ${boot_backup_path} 2>/dev/null
     # Copy /boot related files into armbian system
+    [[ -d "/boot" ]] || mkdir -p /boot
     cp -f ${kernel_path}/${local_kernel_path}/System.map /boot/System.map-${kernel_outname}
     cp -f ${kernel_path}/${local_kernel_path}/.config /boot/config-${kernel_outname}
     cp -f ${kernel_path}/${local_kernel_path}/arch/${SRC_ARCH}/boot/Image /boot/vmlinuz-${kernel_outname}
@@ -570,8 +571,9 @@ generate_uinitrd() {
     # Backup current system files for /usr/lib/modules
     echo -e "${INFO} Backup the files in the [ ${modules_backup_path} ] directory."
     rm -rf ${modules_backup_path} && mkdir -p ${modules_backup_path}
-    mv -f /usr/lib/modules/$(uname -r) -t ${modules_backup_path}
+    mv -f /usr/lib/modules/$(uname -r) -t ${modules_backup_path} 2>/dev/null
     # Copy modules files
+    [[ -d "/usr/lib/modules" ]] || mkdir -p /usr/lib/modules
     cp -rf ${output_path}/modules/lib/modules/${kernel_outname} -t /usr/lib/modules
     #echo -e "${INFO} Kernel copy results in the [ /usr/lib/modules ] directory: \n$(ls -l /usr/lib/modules) \n"
 
@@ -610,11 +612,11 @@ generate_uinitrd() {
 
     # Restore the files in the [ /boot ] directory
     mv -f *${kernel_outname} ${output_path}/boot
-    mv -f ${boot_backup_path}/* -t .
+    mv -f ${boot_backup_path}/* -t . 2>/dev/null
 
     # Restore the files in the [ /usr/lib/modules ] directory
     rm -rf /usr/lib/modules/${kernel_outname}
-    mv -f ${modules_backup_path}/* -t /usr/lib/modules
+    mv -f ${modules_backup_path}/* -t /usr/lib/modules 2>/dev/null
 
     # Remove temporary backup directory
     sync && sleep 3
