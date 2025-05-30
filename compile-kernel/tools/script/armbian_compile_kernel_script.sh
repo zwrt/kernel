@@ -234,20 +234,9 @@ init_var() {
     export SRC_ARCH="arm64"
     export LOCALVERSION="${custom_name}"
 
-    # Check release file
-    [[ -f "${ophub_release_file}" ]] || error_msg "missing [ ${ophub_release_file} ] file."
-
-    # Get values
-    source "${ophub_release_file}"
-    PLATFORM="${PLATFORM}"
-    FDTFILE="${FDTFILE}"
-
-    # Early devices did not add platform parameters, auto-completion
-    [[ -z "${PLATFORM}" && -n "${FDTFILE}" ]] && {
-        [[ ${FDTFILE:0:5} == "meson" ]] && PLATFORM="amlogic" || PLATFORM="rockchip"
-        echo "PLATFORM='${PLATFORM}'" >>${ophub_release_file}
-    }
-    echo -e "${INFO} Armbian PLATFORM: [ ${PLATFORM} ]"
+    # Get Armbian PLATFORM value
+    PLATFORM="$(cat ${ophub_release_file} 2>/dev/null | grep -E "^PLATFORM=.*" | cut -d"'" -f2)"
+    [[ -n "${PLATFORM}" ]] && echo -e "${INFO} Armbian PLATFORM: [ ${PLATFORM} ]"
 }
 
 toolchain_check() {
@@ -571,7 +560,7 @@ generate_uinitrd() {
     cp -f ${kernel_path}/${local_kernel_path}/System.map /boot/System.map-${kernel_outname}
     cp -f ${kernel_path}/${local_kernel_path}/.config /boot/config-${kernel_outname}
     cp -f ${kernel_path}/${local_kernel_path}/arch/${SRC_ARCH}/boot/Image /boot/vmlinuz-${kernel_outname}
-    if [[ "${PLATFORM}" == "rockchip" || "${PLATFORM}" == "allwinner" ]]; then
+    if [[ -z "${PLATFORM}" || "${PLATFORM}" =~ ^(rockchip|allwinner)$ ]]; then
         cp -f /boot/vmlinuz-${kernel_outname} /boot/Image
     else
         cp -f /boot/vmlinuz-${kernel_outname} /boot/zImage
