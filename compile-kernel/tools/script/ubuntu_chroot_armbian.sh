@@ -35,7 +35,6 @@
 # Set environment variables
 chroot_arch_info="$(arch)"
 chroot_kernel_version="${1}"
-kernel_verpatch="$(echo ${chroot_kernel_version} | awk -F '.' '{print $1"."$2}')"
 initramfs_conf="/etc/initramfs-tools/update-initramfs.conf"
 compress_initrd_file="/etc/initramfs-tools/initramfs.conf"
 header_output_path="/opt/header"
@@ -45,8 +44,6 @@ armbian_kernel_path="/opt/linux-kernel"
 dev_repo="https://github.com/ophub/kernel/releases/download/dev"
 # Arm GNU Toolchain source: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
 gun_file="arm-gnu-toolchain-14.2.rel1-aarch64-aarch64-none-linux-gnu.tar.xz"
-# linux-5.4.y kernel only support up to 13.3.rel1, and newer toolchain cannot be used
-gun_file_legacy="arm-gnu-toolchain-13.3.rel1-aarch64-aarch64-none-elf.tar.xz"
 # Set the toolchain path
 toolchain_path="/usr/local/toolchain"
 # Set the kernel arch
@@ -82,8 +79,8 @@ check_dependencies() {
     # Set the necessary packages
     case "${compress_settings}" in
         xz | lzma) necessary_packages="xz-utils" ;;
-        zstd)      necessary_packages="zstd" ;;
-        gzip | *)  necessary_packages="gzip" ;;
+        zstd) necessary_packages="zstd" ;;
+        gzip | *) necessary_packages="gzip" ;;
     esac
 
     # Install the necessary packages
@@ -126,13 +123,6 @@ make_kernel_scripts() {
     cd ${armbian_kernel_path}
     echo -e "${STEPS} Making kernel scripts..."
 
-    if [[ "${kernel_verpatch}" == "5.4" ]]; then
-        gun_file="${gun_file_legacy}"
-        gun_bin="aarch64-none-elf-"
-    else
-        gun_bin="aarch64-none-linux-gnu-"
-    fi
-
     # Download Arm GNU Toolchain
     [[ -d "${toolchain_path}" ]] || mkdir -p ${toolchain_path}
     if [[ ! -d "${toolchain_path}/${gun_file//.tar.xz/}/bin" ]]; then
@@ -156,7 +146,7 @@ make_kernel_scripts() {
     path_gcc="${toolchain_path}/${gun_file//.tar.xz/}/bin:${path_os_variable}"
     # Set cross compilation parameters
     export PATH="${path_gcc}"
-    export CROSS_COMPILE="${toolchain_path}/${gun_file//.tar.xz/}/bin/${gun_bin}"
+    export CROSS_COMPILE="${toolchain_path}/${gun_file//.tar.xz/}/bin/aarch64-none-linux-gnu-"
     export CC="${CROSS_COMPILE}gcc"
     export LD="${CROSS_COMPILE}ld.bfd"
     export MFLAGS=""

@@ -21,7 +21,6 @@
 # error_msg          : Output error message
 #
 # init_var           : Initialize all variables
-# init_env           : Initialize the compilation environment
 # toolchain_check    : Check and install the toolchain
 # query_version      : Query the latest kernel version
 # apply_patch        : Apply custom kernel patches
@@ -73,7 +72,7 @@ auto_kernel="true"
 # Set whether to apply custom kernel patches, options: [ true / false ]
 auto_patch="false"
 # Set custom signature for the kernel
-custom_name="-ophub"
+custom_name=""
 # Set the kernel compile object, options: [ dtbs / all ]
 package_list="all"
 # Set the compression format, options: [ gzip / lzma / xz / zstd ]
@@ -87,8 +86,6 @@ silent_log="false"
 dev_repo="https://github.com/ophub/kernel/releases/download/dev"
 # Arm GNU Toolchain source: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
 gun_file="arm-gnu-toolchain-14.2.rel1-aarch64-aarch64-none-linux-gnu.tar.xz"
-# linux-5.4.y kernel only support up to 13.3.rel1, and newer toolchain cannot be used
-gun_file_legacy="arm-gnu-toolchain-13.3.rel1-aarch64-aarch64-none-elf.tar.xz"
 # Set the toolchain path
 toolchain_path="/usr/local/toolchain"
 # Set the default cross-compilation toolchain: [ clang / gcc / gcc-14.2, etc. ]
@@ -242,18 +239,13 @@ init_var() {
     [[ -n "${PLATFORM}" ]] && echo -e "${INFO} Armbian PLATFORM: [ ${PLATFORM} ]"
 }
 
-init_env() {
+toolchain_check() {
     cd ${current_path}
-    echo -e "${STEPS} Start initializing the compilation environment..."
+    echo -e "${STEPS} Start checking the toolchain for compiling the kernel..."
 
     # Install dependencies
     sudo apt-get -qq update
     sudo apt-get -qq install -y $(cat compile-kernel/tools/script/armbian-compile-kernel-depends)
-}
-
-toolchain_check() {
-    cd ${current_path}
-    echo -e "${STEPS} Start checking the toolchain for compiling the kernel..."
 
     # Set the default path
     path_os_variable="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
@@ -274,13 +266,6 @@ toolchain_check() {
         export LD="ld.lld"
         export MFLAGS=" LLVM=1 LLVM_IAS=1 "
     else
-        if [[ "${kernel_verpatch}" == "5.4" ]]; then
-            gun_file="${gun_file_legacy}"
-            gun_bin="aarch64-none-elf-"
-        else
-            gun_bin="aarch64-none-linux-gnu-"
-        fi
-
         # Download Arm GNU Toolchain
         [[ -d "${toolchain_path}" ]] || mkdir -p ${toolchain_path}
         if [[ ! -d "${toolchain_path}/${gun_file//.tar.xz/}/bin" ]]; then
@@ -311,7 +296,7 @@ toolchain_check() {
         export PATH="${path_gcc}"
 
         # Set cross compilation parameters
-        export CROSS_COMPILE="${toolchain_path}/${gun_file//.tar.xz/}/bin/${gun_bin}"
+        export CROSS_COMPILE="${toolchain_path}/${gun_file//.tar.xz/}/bin/aarch64-none-linux-gnu-"
         export CC="${CROSS_COMPILE}gcc"
         export LD="${CROSS_COMPILE}ld.bfd"
         export MFLAGS=""
@@ -772,7 +757,6 @@ loop_recompile() {
         fi
 
         # Execute the following functions in sequence
-        toolchain_check
         get_kernel_source
         compile_env
         compile_selection
@@ -791,8 +775,8 @@ echo -e "${INFO} Server running on Armbian: [ Release: ${host_release} / Host: $
 
 # Initialize variables
 init_var "${@}"
-# Initialize the environment
-init_env
+# Check and install the toolchain
+toolchain_check
 # Query the latest kernel version
 [[ "${auto_kernel}" == "true" || "${auto_kernel}" == "yes" ]] && query_version
 
