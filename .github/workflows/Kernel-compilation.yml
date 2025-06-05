@@ -1,8 +1,8 @@
 name: Kernel_compilation
 
 on:
-  repository_dispatch:
   workflow_dispatch:
+  repository_dispatch:
   schedule:
     - cron: 10 */4 * * *
     
