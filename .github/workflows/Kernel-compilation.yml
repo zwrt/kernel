@@ -1,15 +1,10 @@
 name: Kernel_compilation
 
 on:
+  repository_dispatch:
   workflow_dispatch:
   schedule:
     - cron: 10 */4 * * *
-  repository_dispatch:
-    inputs:
-      kernel_sign:
-        description: "Set the kernel custom signature"
-        required: false
-        default: ""
     
 env:
   TZ: Asia/Shanghai
