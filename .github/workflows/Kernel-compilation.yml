@@ -16,10 +16,10 @@ jobs:
       - name: Checkout Git Repository
         uses: actions/checkout@v2
         
-      - name: Resync Code
-        run: |
-          chmod +x .github/main.sh
-          ./.github/main.sh
+#      - name: Resync Code
+#        run: |
+#          chmod +x .github/main.sh
+#          ./.github/main.sh
       
       - name: Commit
         run: |
